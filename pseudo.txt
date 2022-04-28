@@ -1,0 +1,51 @@
+Mastermind Game 
+
+Player: [class]
+  Initialize player with name
+  **Add later**
+    Ask player if they want to be codemaker or breaker
+
+Computer:
+
+Board: [class]
+  Initialize blank
+  @guesses = 0
+  Optional Colors: ['red','orange','yellow','green','blue','purple']
+  Create display function to display like 
+
+     1  2  3  4  || Results
+    [ ][ ][ ][ ] || { }
+
+  Update initial board to reflect first guess
+  On each subsequent guess, add new line to board display
+    Whole board with current and previous guesses should show
+
+Gameplay: [module]
+  Welcome message with instructions. 
+    Player enters name > initialize player object
+    round_count = Ask how many rounds they'd like to play
+
+  Generate random code for player to guess
+
+  Print initial board
+
+  Player enters 4 colors separated by commas as guess
+    Ex input: red,red,blue,red
+    @guesses += 1
+
+  Compare input with set code
+    If color and position is right, print ⚫ in results
+    If only color is correct, print ⚪ in results
+    If code is correct end round
+
+  Display board again with new guess and result
+    If game is over, print results
+    Else ask for input until a win or 12 guesses reached
+
+  End round: display final board with result.
+    print congrats message
+    round_count -= 1
+    unless round_count == 0
+      play again
+
+  
