@@ -1,52 +1,101 @@
+require 'pry-byebug'
+
 module Gameplay
   def self.start_game
+    player = Player.new_player
     welcome
-    play_game(Player.new_player, GameBoard.new, generate_code)
+    play_game(player, GameBoard.new, generate_code)
   end
 
-  def play_game(codebreaker, gameboard, code)
-    until compare_codes == true or gameboard.guesses == 12
-      guess = get_input
-      gameboard.update_board(guess)
-      gameboard.display_board
+  def self.play_game(codebreaker, gameboard, code)
+    loop do
+      guess = ask_for_input
+      result = compare_codes(guess, code)
+      gameboard.update_board(guess, result)
+      if result == ['MATCH']
+        win_round(code, gameboard)
+        break
+      elsif gameboard.guesses >= 12
+        lose_round(code, gameboard)
+        break
+      end
     end
-    compare_codes == true ? win_round : lose_round
   end
 
   def self.welcome
-    puts "\nYou must help, we have been locked out of our computer\n" +
-    "which contains our life-saving research. Help us break the\n" +
-    "code and regain access!\n" +
-    "A random code of 4 colors will be generated and you will\n" +
-    "need to guess the colors in the correct order to win.\n\n" +
-    "For each guess, enter 4 colors separated by commas.\n" +
-    "Example: red,yellow,blue,red\n\n" +
-    "After each guess, the board will display your most recent\n" +
-    "guess on the bottom. Next to your guess, you may see\n" +
-    "⚫ and ⚪ symbols. The black circle denotes a correct color\n" +
-    "in the correct position, the white circle denotes a correct\n" +
-    "color in the wrong position. Note: The order of the circles\n" +
-    "may not directly correspond to your guess.\n\n" +
-    "Try to guess the code in 12 tries! Good luck!\n\n"
+    puts "#{'-' * 30}" \
+         "\nYou must help, we have been locked out of our computer\n" \
+         "which contains our life-saving research. Help us break the\n" \
+         "code and regain access!\n\n" \
+         "A random code of 4 colors will be generated and you will\n" \
+         "need to guess the colors in the correct order to win.\n" \
+         "#{'-' * 30}\n" \
+         "The possible colors are:\n#{GameBoard::COLORS.join(', ')}\n\n" \
+         "For each guess, enter 4 colors separated by commas.\n" \
+         "Example: red,yellow,blue,red\n#{'-' * 30}\n" \
+         "After each guess, the board will display your most recent\n" \
+         "guess on the bottom. Next to your guess, you may see\n" \
+         "⚫ and ⚪ symbols. The black circle denotes a correct color\n" \
+         "in the correct position, the white circle denotes a correct\n" \
+         "color in the wrong position. Note: The order of the circles\n" \
+         "may not directly correspond to the order of your guess.\n\n" \
+         "Try to guess the code in 12 tries! Good luck!\n#{'-' * 30}\n"
   end
 
   def self.generate_code
     Array.new(4) { |i| i = GameBoard::COLORS.sample }
   end
 
-  def self.get_input
+  def self.ask_for_input
+    loop do
+      print 'Enter your four color guess: '
+      input = gets.chomp.split(',')
+      input.each { |pick| pick.strip! }
+      p input
+      return input unless verify_input(input) == false
+    end
   end
 
-  def self.verify_input
+  def self.verify_input(color_picks)
+    color_picks.all? { |color| GameBoard::COLORS.include?(color) }
   end
 
-  def self.compare_codes
+  def self.compare_codes(guess, code)
+    feedback = []
+    return feedback << 'MATCH' if guess == code
+
+    counts = guess.to_h { |i| [i, 0] }
+    exact_match(guess, counts, feedback, code)
+    close_match(guess, counts, feedback, code)
+    feedback
   end
 
-  def self.win_round
+  def self.exact_match(picks, tally, matches, answer)
+    picks.each_index do |i|
+      if picks[i] == answer[i]
+        matches << '⚫'
+        tally[picks[i]] += 1
+      end
+    end
   end
 
-  def self.lose_round
+  def self.close_match(picks, tally, matches, answer)
+    picks.each_index do |i|
+      if answer.include?(picks[i]) && tally[picks[i]] < answer.count(picks[i])
+        matches << '⚪'
+        tally[picks[i]] += 1
+      end
+    end
+  end
+
+  def self.win_round(answer, board)
+    puts "Congrats! You won! The answer was:\n#{answer}"
+    board.reset_board
+  end
+
+  def self.lose_round(answer, board)
+    puts "You couldn't crack it this time, the answer was:\n#{answer}"
+    board.reset_board
   end
 
   def self.end_game
@@ -61,51 +110,62 @@ class Player
 
   def self.new_player
     puts 'Please enter your name:'
-    name = gets.chomp 
-    puts 'How many rounds would you like to play? Enter an integer up to 10.'
-    rounds = gets.chomp.to_i
+    name = gets.chomp
+    rounds = ask_for_rounds.to_i
     if rounds > 10
       rounds = 10
       puts 'Setting number of rounds to maximum of 10.'
     end
-    new(name,rounds)
+    new(name, rounds)
+  end
+
+  def self.ask_for_rounds
+    loop do
+      puts 'How many rounds would you like to play?' \
+      ' Enter an integer between 1 and 10.'
+      rounds = gets.chomp
+      return rounds unless rounds.to_i.zero?
+    end
   end
 end
 
 class GameBoard
   COLORS = ['red','orange','yellow','green','blue','purple']
-  attr_reader :board
+  attr_reader :board, :guesses
 
   def initialize
-    @board = [ {guess:['','','',''] , result:['','','','']} ]
+    @board = []
     @guesses = 0
   end
 
   def display_board
-    puts "Guess || Result\n" + '='*30
-    self.board.each do | turn |
-      turn[:guess].each do | color |
+    puts "\n\nGuess || Result\n#{'=' * 30}"
+    board.each do |turn|
+      turn['guess'].each do |color|
         print "[#{color}]"
       end
       print ' || { '
-      turn[:result].each do | res |
-        print "#{res}"
+      turn['result'].each do |res|
+        print res.to_s
       end
-      puts " }\n" + '='*30
+      puts " }\n#{'=' * 30}\n\n"
     end
   end
 
-  protected
-  
-  attr_writer :board, :guesses
-
-  def update_board
+  def update_board(code_guess, guess_feedback)
+    new_row = [['guess', code_guess], ['result', guess_feedback]]
+    board << new_row.to_h
+    display_board
   end
 
   def reset_board
+    board = []
   end
+
+  protected
+
+  attr_writer :board, :guesses
 end
 
-puts "Welcome, would you like to play Mastermind?(y/n)"
+puts 'Welcome, would you like to play Mastermind?(y/n)'
 Gameplay.start_game unless gets.chomp.downcase == 'n'
-
