@@ -15,7 +15,7 @@ module Gameplay
       if result == ['MATCH']
         win_round(code, gameboard)
         break
-      elsif gameboard.guesses >= 12
+      elsif gameboard.board.length > 12
         lose_round(code, gameboard)
         break
       end
@@ -43,15 +43,14 @@ module Gameplay
   end
 
   def self.generate_code
-    Array.new(4) { |i| i = GameBoard::COLORS.sample }
+    Array.new(4) { GameBoard::COLORS.sample }
   end
 
   def self.ask_for_input
     loop do
-      print 'Enter your four color guess: '
+      puts 'Enter your four color guess: '
       input = gets.chomp.split(',')
       input.each { |pick| pick.strip! }
-      p input
       return input unless verify_input(input) == false
     end
   end
@@ -62,11 +61,12 @@ module Gameplay
 
   def self.compare_codes(guess, code)
     feedback = []
+    picks = guess.clone
     return feedback << 'MATCH' if guess == code
 
-    counts = guess.to_h { |i| [i, 0] }
-    exact_match(guess, counts, feedback, code)
-    close_match(guess, counts, feedback, code)
+    counts = picks.to_h { |i| [i, 0] }
+    exact_match(picks, counts, feedback, code)
+    close_match(picks, counts, feedback, code)
     feedback
   end
 
@@ -75,8 +75,10 @@ module Gameplay
       if picks[i] == answer[i]
         matches << '⚫'
         tally[picks[i]] += 1
+        picks[i] = 'match'
       end
     end
+    tally
   end
 
   def self.close_match(picks, tally, matches, answer)
@@ -130,7 +132,7 @@ class Player
 end
 
 class GameBoard
-  COLORS = ['red','orange','yellow','green','blue','purple']
+  COLORS = %w[red orange yellow green blue purple]
   attr_reader :board, :guesses
 
   def initialize
@@ -153,6 +155,8 @@ class GameBoard
   end
 
   def update_board(code_guess, guess_feedback)
+    guesses += 1
+    binding.pry
     new_row = [['guess', code_guess], ['result', guess_feedback]]
     board << new_row.to_h
     display_board
@@ -167,5 +171,5 @@ class GameBoard
   attr_writer :board, :guesses
 end
 
-puts 'Welcome, would you like to play Mastermind?(y/n)'
-Gameplay.start_game unless gets.chomp.downcase == 'n'
+#puts 'Welcome, would you like to play Mastermind?(y/n)'
+#Gameplay.start_game unless gets.chomp.downcase == 'n'
