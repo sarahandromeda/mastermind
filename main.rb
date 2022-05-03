@@ -23,23 +23,33 @@ module Gameplay
   end
 
   def self.welcome
-    puts "#{'-' * 30}" \
-         "\nYou must help, we have been locked out of our computer\n" \
-         "which contains our life-saving research. Help us break the\n" \
-         "code and regain access!\n\n" \
-         "A random code of 4 colors will be generated and you will\n" \
-         "need to guess the colors in the correct order to win.\n" \
-         "#{'-' * 30}\n" \
-         "The possible colors are:\n#{GameBoard::COLORS.join(', ')}\n\n" \
-         "For each guess, enter 4 colors separated by commas.\n" \
-         "Example: red,yellow,blue,red\n#{'-' * 30}\n" \
-         "After each guess, the board will display your most recent\n" \
-         "guess on the bottom. Next to your guess, you may see\n" \
-         "⚫ and ⚪ symbols. The black circle denotes a correct color\n" \
-         "in the correct position, the white circle denotes a correct\n" \
-         "color in the wrong position. Note: The order of the circles\n" \
-         "may not directly correspond to the order of your guess.\n\n" \
-         "Try to guess the code in 12 tries! Good luck!\n#{'-' * 30}\n"
+    puts <<~HEREDOC
+
+      #{'-' * 30}
+      You must help, we have been locked out of our computer
+      which contains our life-saving research. Help us break the
+      code and regain access!
+
+      A random code of 4 colors will be generated and you will
+      need to guess the colors in the correct order to win.
+      #{'-' * 30}
+      The possible colors are:
+      #{GameBoard::COLORS.join(', ')}
+
+      For each guess, enter 4 colors separated by commas.
+      Example: red,yellow,blue,red
+      #{'-' * 30}
+      After each guess, the board will display your most recent
+      guess on the bottom. Next to your guess, you may see
+      ⚫ and ⚪ symbols. The black circle denotes a correct color
+      in the correct position, the white circle denotes a correct
+      color in the wrong position. Note: The order of the circles
+      may not directly correspond to the order of your guess.
+
+      Try to guess the code in 12 tries! Good luck!
+      #{'-' * 30}
+
+    HEREDOC
   end
 
   def self.generate_code
@@ -51,12 +61,13 @@ module Gameplay
       puts 'Enter your four color guess: '
       input = gets.chomp.split(',')
       input.each { |pick| pick.strip! }
-      return input unless verify_input(input) == false
+      return input unless valid_input?(input) == false
     end
   end
 
-  def self.verify_input(color_picks)
-    color_picks.all? { |color| GameBoard::COLORS.include?(color) }
+  def self.valid_input?(color_picks)
+    color_picks.all? { |color| GameBoard::COLORS.include?(color) } &&
+      color_picks.length == 4
   end
 
   def self.compare_codes(guess, code)
@@ -171,5 +182,5 @@ class GameBoard
   attr_writer :board, :guesses
 end
 
-#puts 'Welcome, would you like to play Mastermind?(y/n)'
-#Gameplay.start_game unless gets.chomp.downcase == 'n'
+puts 'Welcome, would you like to play Mastermind?(y/n)'
+Gameplay.start_game unless gets.chomp.downcase == 'n'
