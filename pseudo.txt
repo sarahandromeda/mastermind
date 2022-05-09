@@ -1,51 +1,171 @@
-Mastermind Game 
+Mastermind
 
-Player: [class]
-  Initialize player with name
-  **Add later**
-    Ask player if they want to be codemaker or breaker
+module NewGame
+  self.new_game
+    game = game_type
+    if game == 0
+      breaker = CodeBreaker.new_game
+      breaker.start
+    else 
+      maker = CodeMaker.new_game
+      maker.start
+    end
+  end
 
-Computer:
+  self.game_type
+    puts 'Enter a 0 or 1 to play as Code Breaker(0) or Code Maker(1).'
+    choice = gets
+    game_type if choice.length > 1 || choice.scan(/[1,0]/).empty?
+    choice
+  end
+end
+      
+module Gameplay
 
-Board: [class]
-  Initialize blank
-  @guesses = 0
-  Optional Colors: ['red','orange','yellow','green','blue','purple']
-  Create display function to display like 
+  ask_for_rounds
+    print message
+    chosen_rounds = gets.chomp.to_i
+    ask_for_rounds unless chosen_rounds.between?(1,10)
+  end
 
-     1  2  3  4  || Results
-    [ ][ ][ ][ ] || { }
+  ask_for_input
+    print message
+    guess = gets.chomp.split(',')
+    ask_for_input unless verify_input(guess) == true
+  end
 
-  Update initial board to reflect first guess
-  On each subsequent guess, add new line to board display
-    Whole board with current and previous guesses should show
+  verify_input(guess)
+    guess.all? { |color| COLORS.include(color) }
+  end
 
-Gameplay: [module]
-  Welcome message with instructions. 
-    Player enters name > initialize player object
-    round_count = Ask how many rounds they'd like to play
+  ask_for_code
+    print message
+    chosen_code = gets.chomp.split(',')
+    ask_for_code unless verify_code(chosen_code) == true
+  end
 
-  Generate random code for player to guess
+  verify_code(code_array)
+    code_array.all { |choice| Game::COLORS.include?(choice) }
+  end
+end
 
-  Print initial board
+module Display
+  welcome_message
 
-  Player enters 4 colors separated by commas as guess
-    Ex input: red,red,blue,red
-    @guesses += 1
+  display_board(board)
 
-  Compare input with set code
-    If color and position is right, print ⚫ in results
-    If only color is correct, print ⚪ in results
-    If code is correct end round
+  correct_guess_message
 
-  Display board again with new guess and result
-    If game is over, print results
-    Else ask for input until a win or 12 guesses reached
+  out_of_turns_message
 
-  End round: display final board with result.
-    print congrats message
-    round_count -= 1
-    unless round_count == 0
-      play again
+  game_won_message
 
+  game_lost_message
+
+  game_over_message
+
+  last_guess_warning
+    puts 'Last guess!'
+  end
+
+  last_round_warning
+end
+
+module GameLogic
+  compare(guess, answer)
+  exact_match => returns [match symbols]
+  close_match => returns [match symbols]
+end
+
+module ComputerLogic
+end
   
+class Game
+  include GamePlay
+  include Display
+  include GameLogic
+  COLORS = %w[red orange yellow green blue purple]
+  attr_accessor :turns, :rounds, :board, :curr_guess
+
+  initialize(rounds, answer = Array.new(4) { COLORS.sample })
+    @answer = answer
+    @turns = 0
+    @rounds = rounds
+    @board = []
+  end
+
+  start
+    loop do
+      play_round
+      break if rounds < 0
+      reset_round
+    end
+    end_game
+
+  play_round
+    rounds -= 1
+    last_round_warning if rounds == 0
+    loop do
+      @curr_guess = play_turn
+      update_board
+      break if end_round
+    end
+  end
+
+  reset_round
+    answer = Array.new(4) { COLORS.sample }
+    turns = 0
+    board = []
+  end
+
+  end_round
+    if turns == 12
+      out_of_turns_message
+      puts "The answer was #{answer}."
+      board = []
+      true
+    elsif curr_guess == answer
+      correct_guess_message
+      board = []
+      true
+    end
+  end
+
+  end_game
+    game_over_message
+  end
+
+  play_turn
+    turns += 1
+    last_guess_warning if turns == 12
+  end
+
+  update_board
+    results = compare(curr_guess, answer)
+    board << { guess: curr_guess, result: result}
+    display_board(board)
+  end
+end
+
+class CodeBreaker < Game
+  self.new_game
+    new(ask_for_rounds)
+  end
+
+  play_turn
+    super
+    ask_for_input
+  end
+end
+
+class CodeMaker < Game
+  include ComputerLogic
+  self.new_game
+    new(ask_for_rounds, ask_for_code)
+  end
+
+  play_turn
+    super
+    computer_guess
+  end
+end
