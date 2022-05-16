@@ -2,6 +2,7 @@ require './lib/messages.rb'
 require './lib/game.rb'
 require 'pry-byebug'
 
+
 module GameLogic
   def compare(guess, answer)
     feedback = []
@@ -59,30 +60,41 @@ end
 module Gameplay
   def self.ask_for_rounds
     puts 'How many rounds would you like to play? Enter an integer between 1-10.'
-    chosen_rounds = gets.chomp.to_i
-    ask_for_rounds unless chosen_rounds.between?(1,10)
+    chosen_rounds = ''
+    loop do 
+      chosen_rounds = gets.chomp.to_i
+      break if chosen_rounds.between?(1,10)
+    end
     chosen_rounds
   end
 
   def ask_for_input
     puts 'Enter your 4 color guess separated by commas.'
-    guess = gets.chomp.split(',')
-    ask_for_input unless verify_input(guess) == true
+    guess = ''
+    loop do
+      guess = gets.chomp.split(',')
+      guess.each {|pick| pick.strip!}
+      break if verify_input(guess) == true
+    end
     guess
   end
 
   def verify_input(guess)
-    guess.all? { |color| Game::COLORS.include?(color) }
+    guess.all? { |color| Game::COLORS.include?(color) } && guess.length == 4
   end
 
   def self.ask_for_code
     puts 'Enter a 4 color code separated by commas for the computer to crack.'
-    chosen_code = gets.chomp.split(',')
-    ask_for_code unless verify_code(chosen_code) == true
+    chosen_code = ''
+    loop do
+      chosen_code = gets.chomp.split(',')
+      chosen_code.each {|pick| pick.strip!}
+      break if verify_code(chosen_code) == true
+    end
     chosen_code
   end
 
   def self.verify_code(code_array)
-    code_array.all? { |choice| Game::COLORS.include?(choice) }
+    code_array.all? { |choice| Game::COLORS.include?(choice) } && code_array.length == 4
   end
 end

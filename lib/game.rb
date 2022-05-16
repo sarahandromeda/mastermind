@@ -3,6 +3,7 @@ require './lib/messages.rb'
 require './lib/new_game.rb'
 require 'pry-byebug'
 
+
 class Game
   include Gameplay
   include Display
@@ -20,8 +21,8 @@ class Game
   def start
     loop do
       play_round
-      binding.pry
       break if self.rounds <= 0
+
       reset_round
     end
     end_game
@@ -91,7 +92,9 @@ class CodeMaker < Game
   include ComputerLogic
   attr_accessor :possible_answers
   def self.new_game
-    new(Gameplay.ask_for_rounds, Gameplay.ask_for_code)
+    rounds = Gameplay.ask_for_rounds
+    answer = Gameplay.ask_for_code
+    new(rounds, answer)
   end
 
   def play_round
@@ -122,8 +125,8 @@ class CodeMaker < Game
   end
 
   def reset_round
-    @answer = Gameplay.ask_for_code
     super
+    self.answer = Gameplay.ask_for_code
   end
 
 
